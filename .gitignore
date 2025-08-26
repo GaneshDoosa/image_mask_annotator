@@ -19,12 +19,11 @@ env/
 *.swo
 
 # Data and models
-data/*
-!data/.gitkeep
-raw_data/*
-!raw_data/.gitkeep
-models/*
-!models/.gitkeep
+data/
+raw_data/
+models/
+assigned/
+masks/
 *.pth
 *.pt
 *.h5

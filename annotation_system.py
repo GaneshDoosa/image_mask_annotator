@@ -55,17 +55,14 @@ class CollaborativeAnnotationManager:
         instructions = """
 # FOOT SEGMENTATION ANNOTATION INSTRUCTIONS
 
-## Tools Needed:
-- CVAT (Computer Vision Annotation Tool) - Recommended
-- LabelMe - Alternative
-- Photoshop/GIMP - Manual option
+## Tool:
+- Simple Brush Annotator (included in this project)
 
-## Quick Setup with LabelMe:
-1. Install: `pip install labelme`
-2. Run: `labelme assigned/`
-3. Create polygon around foot+footwear
-4. Label as "foot_with_footwear"
-5. Save as PNG mask
+## Quick Setup:
+1. Navigate to your assigned folder
+2. Run: `python simple_brush_annotator.py`
+3. Paint over foot+footwear areas
+4. Save masks using 's' key
 
 ## What to Annotate:
 ✅ Entire foot surface (bare feet)
@@ -105,15 +102,25 @@ class CollaborativeAnnotationManager:
         """Track annotation progress for each member"""
         progress = {}
         for member in self.team_members:
-            completed_dir = f"{self.output_dir}/{member}/completed"
+            assigned_dir = f"{self.output_dir}/{member}/assigned"
             masks_dir = f"{self.output_dir}/{member}/masks"
             
-            completed_images = len([f for f in os.listdir(completed_dir) if f.endswith(('.jpg', '.png', '.jpeg'))])
-            completed_masks = len([f for f in os.listdir(masks_dir) if f.endswith('.png')])
+            # Count assigned images
+            assigned_images = [f for f in os.listdir(assigned_dir) if f.endswith(('.jpg', '.png', '.jpeg'))]
+            total_assigned = len(assigned_images)
+            
+            # Count completed masks (masks that match assigned images)
+            completed_masks = 0
+            for img in assigned_images:
+                img_name = os.path.splitext(img)[0]
+                mask_path = os.path.join(masks_dir, f"{img_name}.png")
+                if os.path.exists(mask_path):
+                    completed_masks += 1
             
             progress[member] = {
-                'completed_images': completed_images,
-                'completed_masks': completed_masks,
+                'assigned': total_assigned,
+                'completed': completed_masks,
+                'remaining': total_assigned - completed_masks,
                 'last_updated': datetime.now().isoformat()
             }
         
@@ -122,43 +129,31 @@ class CollaborativeAnnotationManager:
         
         return progress
 
-def setup_labelme_batch():
-    """Create batch annotation script for LabelMe"""
-    script = """#!/bin/bash
-# Batch annotation with LabelMe
-# Usage: ./annotate.sh
 
-echo "Starting annotation session..."
-echo "Instructions:"
-echo "1. Draw polygon around foot+footwear"
-echo "2. Label as 'foot_with_footwear'"
-echo "3. Save and move to next image"
-echo "4. Press Ctrl+C to exit"
-
-labelme assigned/ --output masks/ --labels foot_with_footwear
-"""
-    
-    with open('annotate.sh', 'w') as f:
-        f.write(script)
-    
-    os.chmod('annotate.sh', 0o755)
-    print("Created annotate.sh - Run this for batch annotation")
 
 if __name__ == '__main__':
-    # Setup collaborative annotation
+    import sys
+    
     manager = CollaborativeAnnotationManager(
         images_dir='raw_images',
         output_dir='annotation_workspace',
         team_members=['member1', 'member2', 'member3']
     )
     
-    manager.distribute_images()
-    manager.create_annotation_instructions()
-    setup_labelme_batch()
-    
-    print("\n✅ Annotation workspace created!")
-    print("Next steps:")
-    print("1. Each member goes to their folder")
-    print("2. Run: pip install labelme")
-    print("3. Run: ./annotate.sh")
-    print("4. Check progress: python annotation_system.py --progress")
+    if len(sys.argv) > 1 and sys.argv[1] == '--progress':
+        # Show progress
+        progress = manager.track_progress()
+        print("\n📊 Progress Report:")
+        for member, stats in progress.items():
+            print(f"  {member}: {stats['completed']}/{stats['assigned']} completed ({stats['remaining']} remaining)")
+    else:
+        # Setup workspace
+        manager.distribute_images()
+        manager.create_annotation_instructions()
+        manager.track_progress()  # Create initial progress file
+        
+        print("\n✅ Annotation workspace created!")
+        print("Next steps:")
+        print("1. Each member goes to their assigned folder")
+        print("2. Run: python simple_brush_annotator.py")
+        print("3. Check progress: python annotation_system.py --progress")

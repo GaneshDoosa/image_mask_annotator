@@ -1,14 +1,13 @@
-# Foot + Footwear Segmentation Model
+# Manual Image Mask Annotator
 
-A robust semantic segmentation model for detecting and segmenting human feet with any worn footwear in various image conditions.
+A simple tool for manually creating pixel-perfect masks for foot and footwear segmentation.
 
 ## Features
 
-- **Multi-architecture support**: U-Net, DeepLabV3+, FPN
-- **Robust augmentations**: Handles partial crops, lighting variations, occlusions
+- **Simple brush interface**: Paint and erase with adjustable brush size
+- **Team collaboration**: Distribute work among multiple annotators
+- **Progress tracking**: Monitor annotation progress
 - **Single class segmentation**: `foot_with_footwear` (includes bare feet, socks, shoes, sandals, etc.)
-- **Real-world optimized**: Works with mobile photos, mirror selfies, cropped images
-- **Easy inference**: Simple API for deployment
 
 ## Quick Start
 
@@ -17,85 +16,49 @@ A robust semantic segmentation model for detecting and segmenting human feet wit
 pip install -r requirements.txt
 ```
 
-### 2. Data Preparation
-Organize your data:
-```
-raw_data/
-├── images/
-│   ├── image1.jpg
-│   └── ...
-└── masks/
-    ├── image1.png  # Binary masks: 0=background, 255=foot_with_footwear
-    └── ...
-```
-
-Run data preparation:
+### 2. Simple Annotation
+For individual annotation:
 ```bash
-python data_preparation.py
+python simple_brush_annotator.py
 ```
 
-### 3. Training
+### 3. Team Collaboration
+For team-based annotation:
 ```bash
-cd src
-python train.py
+python annotation_system.py
 ```
 
-### 4. Inference
-```python
-from src.inference import FootSegmentationInference
+## When to Use Team Collaboration
 
-# Load model
-inference = FootSegmentationInference('models/best_model.pth')
+**Use team collaboration when:**
+- You have 100+ images to annotate
+- Multiple people available to help
+- Need to distribute workload evenly
+- Want to track individual progress
 
-# Predict on image
-mask = inference.predict('path/to/image.jpg')
-```
+**Use simple annotation when:**
+- Small dataset (<100 images)
+- Working alone
+- Quick one-off annotation task
 
-## Model Architectures
+## How Team Collaboration Works
 
-### U-Net (Recommended)
-- **Best for**: General foot segmentation
-- **Encoder**: ResNet50, EfficientNet-B4
-- **Memory**: Moderate
-- **Speed**: Fast
+### Setup (Run once):
+1. Put all images in `raw_images/` folder
+2. Run `python annotation_system.py`
+3. Images automatically distributed to team members
 
-### DeepLabV3+
-- **Best for**: High-precision boundaries
-- **Encoder**: ResNet50, ResNet101
-- **Memory**: High
-- **Speed**: Moderate
+### Each team member:
+1. Navigate to their assigned folder: `cd annotation_workspace/member1/assigned/`
+2. Run: `python ../../../simple_brush_annotator.py`
+3. When prompted, press Enter (uses current directory)
+4. Annotate assigned images
+5. Masks saved to: `annotation_workspace/member1/masks/`
 
-### FPN
-- **Best for**: Multi-scale feet detection
-- **Encoder**: ResNet50, EfficientNet
-- **Memory**: Low
-- **Speed**: Very fast
-
-## Training Configuration
-
-Key parameters in `configs/config.yaml`:
-
-```yaml
-model:
-  type: 'unet'
-  encoder: 'resnet50'
-  
-training:
-  img_size: 512
-  batch_size: 8
-  learning_rate: 1e-4
-  epochs: 100
-```
-
-## Data Augmentation Strategy
-
-The model uses aggressive augmentations to handle real-world scenarios:
-
-- **Cropping**: Simulates partial body images
-- **Lighting**: Brightness/contrast variations
-- **Color**: Footwear color/texture changes
-- **Noise**: Handles low-quality mobile photos
-- **Geometric**: Rotation, scaling for different poses
+### Progress tracking:
+- Run: `python annotation_system.py --progress`
+- Progress saved to: `annotation_workspace/progress.json`
+- Each member's completed count tracked automatically
 
 ## Labeling Guidelines
 
@@ -111,74 +74,37 @@ The model uses aggressive augmentations to handle real-world scenarios:
 ❌ Reflections  
 ❌ Background objects  
 
-## Performance Metrics
+## Controls (Simple Brush Annotator)
 
-- **IoU (Intersection over Union)**: Primary metric
-- **Dice Score**: Segmentation quality
-- **Pixel Accuracy**: Overall correctness
-
-## Model Deployment
-
-### Batch Processing
-```python
-inference = FootSegmentationInference('models/best_model.pth')
-masks = inference.predict_batch(image_list)
-```
-
-### Real-time Processing
-```python
-# Optimized for speed
-inference = FootSegmentationInference(
-    'models/best_model.pth',
-    model_type='fpn',  # Fastest architecture
-    img_size=256       # Smaller input size
-)
-```
-
-## Common Use Cases
-
-1. **Mobile foot scanning apps**
-2. **Virtual shoe try-on**
-3. **Foot measurement applications**
-4. **Medical foot analysis**
-5. **Fashion e-commerce**
-
-## Troubleshooting
-
-### Low IoU scores:
-- Increase training epochs
-- Use stronger augmentations
-- Check mask quality
-- Try different encoder
-
-### Slow inference:
-- Use FPN architecture
-- Reduce input image size
-- Use lighter encoder (EfficientNet-B0)
-
-### Memory issues:
-- Reduce batch size
-- Use gradient checkpointing
-- Smaller input resolution
+- **Left click + drag**: Paint/Erase (depends on mode)
+- **Right click + drag**: Always erase
+- **'e'**: Toggle erase mode
+- **'+'/'-'**: Change brush size
+- **'s'**: Save mask
+- **'n'**: Next image
+- **'p'**: Previous image
+- **'c'**: Clear mask
+- **'q'**: Quit
 
 ## File Structure
 
 ```
-foot_segmentation/
-├── src/
-│   ├── dataset.py      # Data loading and augmentation
-│   ├── model.py        # Model architectures
-│   ├── train.py        # Training script
-│   ├── inference.py    # Inference API
-│   └── utils.py        # Helper functions
-├── configs/
-│   └── config.yaml     # Training configuration
-├── data/               # Organized dataset
-├── models/             # Saved checkpoints
-├── data_preparation.py # Data organization script
-└── requirements.txt    # Dependencies
+image_mask_annotator/
+├── simple_brush_annotator.py    # Main annotation tool
+├── annotation_system.py         # Team collaboration system
+├── annotation_workspace/        # Team workspace
+│   ├── member1/
+│   │   ├── assigned/            # Images to annotate
+│   │   ├── completed/           # Completed images
+│   │   └── masks/               # Created masks
+│   └── final_masks/             # Merged final masks
+├── raw_images/                  # Source images
+└── requirements.txt             # Dependencies
 ```
 
-## License
+## Usage
 
-MIT License - Feel free to use for commercial and research purposes.
+1. Place your images in appropriate folders
+2. Run the annotation tool
+3. Create masks by painting over foot/footwear areas
+4. Save masks as PNG files (0=background, 255=foot_with_footwear)
